@@ -1,19 +1,19 @@
 import scrapy
 import re
 
-from imdb.items import ImdbItem, CastItem
+from imdb.items import MovieItem, CastItem
 
 
 class imdbSpider(scrapy.Spider):
     name = "imdb"
     allowed_domains = ["imdb.com"]
-        start_urls = [
-            "http://www.imdb.com/chart/top?ref_=nv_ch_250_4"  # this is the top 250 list
-        ]
+    start_urls = [
+        "http://www.imdb.com/chart/top?ref_=nv_ch_250_4"  # this is the top 250 list
+    ]
 
-        # for now this method just parses the top 250 IMDB page and has a callbck request to each title link
-        # so I can parse more film info per film.
-        def parse(self, response):
+    # for now this method just parses the top 250 IMDB page and has a callbck request to each title link
+    # so I can parse more film info per film.
+    def parse(self, response):
             # For testing easily,we may not want all these data which could take a very long time~
             self.wanted_num = 10
             # //TODO==king it seems that IMDB has changed the html structure for these information
@@ -36,14 +36,14 @@ class imdbSpider(scrapy.Spider):
                     return
                 yield request
 
-        def parseMovieDetails(self, response):
+    def parseMovieDetails(self, response):
             item = response.meta['item']
             item = self.getBasicFilmInfo(item, response)
             item = self.getTechnicalDetails(item, response)
             item = self.getCastMemberInfo(item, response)
             return item
 
-        def getBasicFilmInfo(self, item, response):
+    def getBasicFilmInfo(self, item, response):
             item['Director'] = response.xpath(
                 "//div/span[@itemprop='director']/a/span/text()").extract()
             # this can deffinatly be multiple people.
@@ -58,7 +58,7 @@ class imdbSpider(scrapy.Spider):
                 "//span[@itemprop='contentRating']/text()").extract()[0]
             return item
 
-        def getTechnicalDetails(self, item, response):
+    def getTechnicalDetails(self, item, response):
             # some of these items do not get values so I need to set a defualt for them. I don't want errors.
             for index, details in enumerate(response.xpath("//*[@id='titleDetails']/div")):
                 titleDetails = details.xpath('h4/text()').extract()
@@ -68,7 +68,7 @@ class imdbSpider(scrapy.Spider):
 
             return item
 
-        def getCastMemberInfo(self, item, response):
+    def getCastMemberInfo(self, item, response):
             item['CastMembers'] = []
             for index, castMember in enumerate(response.xpath("//*[@id='titleCast']/table/tr")):
                 # the first index does not have any actor data in it, so we skip it.
@@ -89,7 +89,7 @@ class imdbSpider(scrapy.Spider):
 
         # this method looks at each item form the film detials wraper, and figures out what text goes with wich item,
         # sense there are no clear ways of doing it otherwise.
-        def mapFilmDetails(self, response, titleDetails, item, index):
+    def mapFilmDetails(self, response, titleDetails, item, index):
             index += 1  # the xpaths are not zero indexed
             if(titleDetails):
                 if("Language" in titleDetails):
@@ -121,7 +121,7 @@ class imdbSpider(scrapy.Spider):
                         "//*[@id='titleDetails']/div[" + str(index) + "]/time/text()").extract())
             return item
 
-        def ifNotEmptyGetIndex(self, item, index=0):
+    def ifNotEmptyGetIndex(self, item, index=0):
             if item:  # check to see it's not empty
                 return item[index]
             else:
